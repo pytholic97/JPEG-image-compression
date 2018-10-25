@@ -5,10 +5,22 @@ The credit for the following files is due to [nothings/stb](https://github.com/n
 1. stb_image.h
 2. stb_image_write.h
 
-Status -> Basic functionality done.
+## Usage
 
-TODO:
-1. Adopt for other images of various pixel size through commandline args.
-2. Test and verfiy for various images.
-3. Change q50 dynamically and observe compression.
-4. Web based interface.
+Compiling main.c:
+
+```
+gcc -o mn main.c -lm
+```
+Invoking elf:
+
+```
+./mn <path to image> image_height image_width
+```
+The output image after recovery from the compression is stored in the same path
+as the elf file with the name: 'jpeg_comp.bmp'.
+
+## TODO
+1. Test and verfiy for various images.
+2. Change q50 dynamically and observe compression.
+3. Web based interface.
