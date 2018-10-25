@@ -22,6 +22,7 @@ int q50[8][8] = {{16,11,10,16,24,40,51,61},
 {72,92,95,98,112,100,130,99}};
 
 
+
 void dct(int *bl[],float *im_dct[]);
 void qtize(float *inp[],int *outp[]);
 void inflate_rlc(int *inp,int *outp[]);
@@ -37,9 +38,9 @@ int main(int argc, char *argv[]){
   int x=360,y=240,n=1;
   x = atoi(argv[2]);
   y = atoi(argv[3]);
-  
-  unsigned char *data = stbi_load(argv[1], &x, &y, &n, 1);
-	
+
+	unsigned char *data = stbi_load(argv[1], &x, &y, &n, 1);
+
 	int w=x,h=y;
 
   unsigned char *im_compr = (unsigned char *)malloc(w*h*sizeof(char));
@@ -58,30 +59,55 @@ int main(int argc, char *argv[]){
 
   int *rlc = (int *)malloc(128*sizeof(int));
   for(int i =0;i < 128;i++) rlc[i] = -255;
+	int cnc1 = 0;
 
-  for(int i1 = 0;(i1+8) <= h;i1 += 8)
+	for(int i1 = 0;(i1+8) <= h;i1 += 8)
   for(int j1 = 0;(j1+8) <= w;j1 += 8)
   {
-    for(int u1 = 0;u1 < 8;u1++)
+		if(i1 == 0 && j1 == 0) printf("\n-----------Normalized matrix--------------\n");
+    for(int u1 = 0;u1 < 8;u1++){
     for(int v1 = 0;v1 < 8;v1++)
-      bl[u1][v1] = (int)(data[w*i1 + j1 + w*u1 + v1]) - 128;
-      //if(i1 == 0 && j1 == 0) printf("%d ",bl[u1][v1]+128);
+    {
+			bl[u1][v1] = (int)(data[w*i1 + j1 + w*u1 + v1]) - 128;
+      if(i1 == 0 && j1 == 0) printf("%d ",bl[u1][v1]);
+		}
+		if(i1 == 0 && j1 == 0) printf("\n");
+	}
 
+	if(i1 == 0 && j1 == 0) printf("\n-------------DCT----------------\n");
     dct(bl,im_dct);
-    
-    
+	if(i1 == 0 && j1 == 0)
+	for(int itr1 = 0; itr1 < 8;itr1++){
+		for(int i2 = 0;i2 < 8;i2++) printf("%.2f ",im_dct[itr1][i2]);
+		printf("\n");
+	}
+
     qtize(im_dct,im_qtized);
-    
-    
-    for(int i =0;i < 128;i++) rlc[i] = -255;
+	if(i1 == 0 && j1 == 0) printf("\n-----------Quantized matrix-----------\n");
+	if(i1 == 0 && j1 == 0)
+		for(int i2 = 0;i2 < 8;i2++){
+			for(int i3 = 0;i3 < 8;i3++) printf("%d ",im_qtized[i2][i3]);
+			printf("\n");
+		}
+  for(int i =0;i < 128;i++) rlc[i] = -255;
 
-    rl_code(im_qtized,rlc);
-    
-    inflate_rlc(rlc,im_rec);
+  rl_code(im_qtized,rlc);
 
-    idct(im_rec,im_qtized); //stored image idct
+	if(i1 == 0 && j1 == 0) printf("\n-----------Run length code-----------\n");
 
-    //if(i1 == 0 && j1 == 0) printf("\n");
+		for(int i2 = 0;rlc[i2] != -255;i2++){
+			if(i1 == 0 && j1 == 0) printf("%d ",rlc[i2]);
+			cnc1++;
+		}
+  inflate_rlc(rlc,im_rec);
+
+  idct(im_rec,im_qtized); //stored image idct
+	if(i1 == 0 && j1 == 0) printf("\n-----------Original image---------\n");
+	if(i1 == 0 && j1 == 0)
+		for(int i2 = 0;i2 < 8;i2++){
+			for(int i3 = 0;i3 < 8;i3++) printf("%d ",im_qtized[i2][i3]);
+			printf("\n");
+		}
 
     for(int u1 = 0;u1 < 8;u1++)
     for(int v1 = 0;v1 < 8;v1++)
@@ -91,6 +117,19 @@ int main(int argc, char *argv[]){
     }
 
   }
+
+	float mse = 0;
+	printf("\n----------Mean square error is-----------\n");
+	int mx = -300;;
+  for(int j1 = 0;j1 < h*w;j1++){
+	int jk = (int)data[j1];
+	if(jk > mx) mx = jk;
+	int kl = (int)im_compr[j1];
+	mse += pow(jk - kl,2);
+	}
+	printf("MSE = %f max value = %d\n",sqrt(mse)/(h*w),mx);
+
+	printf("Compressed length in bytes is %d\n",cnc1);
   stbi_write_bmp("jpeg_comp.bmp", w, h, 1, im_compr);
 
   stbi_image_free(data);
@@ -219,7 +258,7 @@ void rl_code(int *inp[],int *outp){
     }
   }
   free(tmp);
-  
+
   j = 0;
   lp  = 1;
   outp[0] = st[0];
@@ -256,7 +295,7 @@ void inflate_rlc(int *inp, int *outp[])
   }
   //printf("%d %d ",i,lp);
   for(;lp < 64;lp++) st[lp] = 0;
-  
+
   for(int u1 = 0;u1 < 8;u1++)
   for(int v1 = 0;v1 < 8;v1++)
     outp[u1][v1] = 0;
